@@ -52,10 +52,10 @@ if __name__=='__main__':
   extra, vars = gen.parse_args(sys.argv[1:])
   print extra, vars
 
-  output_files = gen.find_all(extra[0])
-  print output_files
-  eps_objs = []
+  output_files = []
+  gen.find_all_ext(extra[0], extra[1], output_files)
 
+  eps_objs = []
 #parse multiple
   for file in output_files:
     try:
