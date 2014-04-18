@@ -1,0 +1,53 @@
+Screened Coulomb for the full mesh.
+ &inputgw
+  prefix='MoS2',
+  amass(1) = 95.94,
+  amass(2) = 32.065,
+  outdir='./tmp',
+  fpol=.true.
+  ldisp=.true.
+  lrpa=.true.
+  nq1 = 6
+  nq2 = 6
+  nq3 = 4
+  tr2_gw=1.0d-3,
+  tr2_green=1.0d-3
+  kpoints = .true.
+  use_symm   = .false.
+  modielec   = .false.
+  w_of_q_start   = 1
+  do_q0_only     = .true.
+  do_epsil       = .true.
+  do_coulomb     = .true.
+  solve_direct   = .true.
+  do_green       = .false.
+  do_sigma_c     = .false.
+  do_sigma_exx   = .false.
+  do_sigma_extra = .false.
+  do_sigma_matel = .false.
+  do_serial      = .true.
+  maxter_green   = 110
+  ecutsex     = 20.0
+  ecutpol     = 1.0
+  ecutgrn     = 1.0
+  ecutsco     = 1.0
+  wsigmamin   = 6.0
+  wsigmamax   = 11.0
+  deltaw      = 0.5
+  eta         = 0.03
+  wcoulmax    = 70
+  nbnd_sig    = 26
+  padecont    =.true.
+  godbyneeds  =.false.
+  multishift  =.true.
+  greenzero   = 0.0
+  nmix_gw     = 4
+ /
+FREQUENCIES
+{nws}
+{ws}
+/
+K_points
+{nks}
+{kpts}
+/

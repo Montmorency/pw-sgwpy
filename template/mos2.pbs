@@ -1,0 +1,28 @@
+#!/bin/tcsh
+#$ -S /bin/tcsh
+#$ -l qname=all.q 
+#$ -o jobtest.out
+#$ -e jobtest.err
+#$ -cwd
+#$ -j y
+#$ -R y
+#$ -l h_rt=12:00:00
+#$ -pe orte 6
+#$ -l h_vmem=2.7G
+
+
+module load openmpi-x86_64
+module load intel/ics-2013
+
+set MPIRUN  = /usr/lib64/openmpi/bin/mpirun
+set HOME    = /home/lambert
+set TDIR    = /home/lambert/scratch/MoS2q20
+set GW      = /home/lambert/sgwII/src/gw.x
+set JDIR    = {jdir}
+
+cd $TDIR
+
+$MPIRUN --mca btl self,openib,sm,tcp -np 6 $GW -npool 6 < $JDIR/{jobin} > $JDIR/{jobout}
+
+exit
+
