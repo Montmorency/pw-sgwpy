@@ -6,11 +6,9 @@ import numpy as np
 """
 Script for varying a bunch of variables in a bunch of files to generate a bunch of calculations.
 Makes a directory for each, labelled by varied variables, i.e. ones with more than one value.
-vary.py --prefix [target root dir] [template/file]
+vary.py --wstart --wstop --dw --prefix [target root dir] [template/file]
 Specify variables in files using new-style python format notation:
 """
-
-
 #thank you tfgg
 def recursive_find(dir):
   files = []
@@ -21,7 +19,6 @@ def recursive_find(dir):
       files.append(os.path.join(dir, f))
   return files
 
-
 def find_all_ext(path, ext, found):
   for file in os.listdir(path):
     file_path = os.path.join(path, file)
@@ -30,7 +27,6 @@ def find_all_ext(path, ext, found):
     else:
       if ext == file.split('.')[-1]:
         found.append(file_path)
-#
 
 def parse_args(args):
   extra = []
@@ -60,11 +56,16 @@ def freq_grid(wstart, wstop, dw):
 
 def k_path():
   kpts = []
-  #for kxy in np.arange(0, 0.3333, 0.03333):
-  #  kpts.append('{0}  {1}  {2}'.format(kxy, kxy, 0.0))
-  for kxy in np.arange(0, 1.000, 0.1):
-    kpts.append('{0}  {1}  {2}'.format(0.00, 0.00, kxy))
-  return kpts  
+#reciprocal lattice vectors for MoS2.
+  b1 = [1.0, 0.577350, 0.00]
+  b2 = [0.0, 1.154701, 0.00]
+  b3 = [0.0, 0.00, 5.20]
+  for kxy in np.arange(0, 0.3333+0.03333, 0.03333):
+    if np.sqrt(np.square(kxy) + np.square(kxy)) == 0.00:
+      kpts.append('{0}  {1}  {2}'.format(0.001, 0.001, 0.0))
+    else:
+      kpts.append('{0}  {1}  {2}'.format(kxy, b1[1]*kxy + b2[1]*kxy, 0.0))
+  return kpts
 
 def any(xs):
   for x in xs:
@@ -104,6 +105,7 @@ if __name__=='__main__':
   wfs = freq_grid(vars['wstart'][0], vars['wstop'][0], vars['dw'][0])
 
   kpts = k_path()
+  print kpts
 
   template_file = '{0}'.format(extra[1])
   f = open(template_file).read()
