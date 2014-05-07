@@ -4,15 +4,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 import gen_files as gen
 
+
+
 class Eps(object):
   def __init__(self):
     self.w    = [(0.0, 0.0)]
     self.eps  = [(0.0, 0.0)]
+    self.eels = [(0.0, 0.0)]
     self.qvec = (0.0, 0.0, 0.0)
     self.nws  = 0
 
   def __repr__(self):
       return 'epsilon object for qpoint {0}'.format(self.qvec)
+
+  def gen_eels(self):
+   #unit cell volume
+    omega  = 716.8086
+   #nkstot = 100
+    nkstot = 1
+    #const  = 64.0*np.pi/(omega*nkstot) 
+    const  = np.pi
+    self.eels = [(const*(epsi)/(np.square(epsr) + np.square(epsi))) for epsr, epsi in self.eps]
+    
 
 def pull_eps(f):
 #get all the frequencies, epsre, and qvecs out of the output file.
@@ -42,18 +55,27 @@ def pull_eps(f):
 
 def plot_eps(eps):
     epsre, epsim = zip(*eps.eps)
+    eps.gen_eels()
     wre, wim = zip(*eps.w)
-
-    plt.plot(wre, epsre[:eps.nws],'r')
-    plt.plot(wre, epsim[:eps.nws],'b')
+    plt.plot(wre[1:eps.nws-1], epsre[1:eps.nws-1], 'black')
+    plt.plot(wre[1:eps.nws-1], epsim[1:eps.nws-1], 'blue')
+    plt.plot(wre[1:eps.nws-1], eps.eels[1:eps.nws-1],'red')
   
 #return struct with freqno, re(w), im(w), re(eps(w)), im(eps(w))
 if __name__=='__main__':
   extra, vars = gen.parse_args(sys.argv[1:])
-  print extra, vars
-
   output_files = []
-  gen.find_all_ext(extra[0], extra[1], output_files)
+
+  if extra == []: 
+    print "python proc_out.py ./dir suffix"
+    #sys.exit()
+    #gen.find_all_ext('MoS2perp', 'out', output_files)
+    #gen.find_all_ext('MoS2perp2', 'out', output_files)
+    gen.find_all_ext('MoS2K', 'out', output_files)
+    gen.find_all_ext('MoS2K2', 'out', output_files)
+    gen.find_all_ext('MoS2K3', 'out', output_files)
+  else:
+    gen.find_all_ext(extra[0], extra[1], output_files)
 
   eps_objs = []
 #parse multiple
@@ -66,9 +88,11 @@ if __name__=='__main__':
 
     eps_objs.append(eps_tmp)
 
-  for eps in eps_objs[1:-1]:
-    print eps
-    plot_eps(eps)
+  for eps in eps_objs:
+    try:
+      plot_eps(eps)
+    except:
+      print sys.exc_info()[0]
 
   plt.show()
 
