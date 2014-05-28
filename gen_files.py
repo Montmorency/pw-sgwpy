@@ -2,7 +2,6 @@ import sys
 import itertools
 import os, os.path
 import numpy as np
-
 """
 Script for varying a bunch of variables in a bunch of files to generate a bunch of calculations.
 Makes a directory for each, labelled by varied variables, i.e. ones with more than one value.
@@ -32,7 +31,6 @@ def parse_args(args):
   extra = []
   vars  = []
   current_var = None
-
   for arg in args:
     if arg.startswith('--'):
       current_var = arg[2:]
