@@ -3,6 +3,7 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import gen_files as gen
+import scipy
 from scipy.fftpack import dct
 
 #Container for dielectric functions \epsilon(\q,\omega):
@@ -16,7 +17,6 @@ class Eps(object):
 
   def __repr__(self):
       return 'epsilon object for qpoint {0}'.format(self.qvec)
-
   def gen_eels(self):
    #unit cell volume
     omega  = 716.8086
@@ -25,7 +25,6 @@ class Eps(object):
     #const  = 64.0*np.pi/(omega*nkstot) 
     const  = np.pi
     self.eels = [(const*(epsi)/(np.square(epsr) + np.square(epsi))) for epsr, epsi in self.eps]
-
   def plot_eps(eps):
     epsre, epsim = zip(*eps.eps)
     eps.gen_eels()
@@ -34,20 +33,23 @@ class Eps(object):
     plt.plot(wre[1:eps.nws-1], epsim[1:eps.nws-1], 'blue')
     plt.plot(wre[1:eps.nws-1], eps.eels[1:eps.nws-1],'red')
 
-
 #Container for selfenergy matrix elements band i,j: \sigma_{ij}(\w).
 class Sigma(object):
   def __init__(self):
-    self.sigmare = [0.00]
-    self.sigmaim = [0.00]
-    self.aspec   = [0.00]
-    self.nws     = 0
-    self.w       = [0.0]
-    self.kvec    = (0.0, 0.0, 0.0)
+    self.sigmare  = [0.00]
+    self.sigmaim  = [0.00]
+    self.aspec    = [0.00]
+    self.nws      = 0
+    self.w        = [0.0]
+    self.kvec     = (0.0, 0.0, 0.0)
+    self.lda_e     = [0.0]
+    self.vxc       = [0.0]
+    self.exx       = [0.0]
+    self.qp_energy = [0.0]
+    self.qp_renorm = [0.0]
 
   def __repr__(self):
       return 'Sigma object for kpoint {0}'.format(self.kvec)
-
   def plot_sig(self):
     res   = open('resigma.dat', 'w')
     ims   = open('imsigma.dat', 'w')
@@ -59,7 +61,6 @@ class Sigma(object):
     for line in self.aspec:
       print >>aspec, line
 
-
 def pull_sig(f):
   sigma_regex     = re.compile(r'GW qp renorm.*?\n\n(.*?)\Z', re.M | re.S)
   sigmare_regex   = re.compile(r'REsigma\n(.*?)IMsigma', re.M | re.S)
@@ -67,11 +68,32 @@ def pull_sig(f):
   sigmaspec_regex = re.compile(r'ASpec\n(.*?)\n\s{0,}\n', re.M | re.S)
   sigmakpoint_regex = re.compile(r'Sigma_k\s+(.*?)\n', re.S)
 
+#all regexs related to matrix elements and qp renormalization
+  lda_e_regex  = re.compile(r'(?<=LDA eigenval \(eV\)).*$', re.M)
+  vxc_regex    = re.compile(r'(?<=Vxc expt val \(eV\)).*$', re.M)
+  qp_sigmexch_regex  = re.compile(r'(?<=Sigma_ex val \(eV\)).*$',   re.M)
+  qp_e_regex   = re.compile(r'(?<=GW qp energy \(eV\)).*$',   re.M)
+  qp_renorm_regex = re.compile(r'(?<=QP renorm).*$',   re.M)
+
+  try:
+    lda_e       = lda_e_regex.findall(f)
+    vxc         = vxc_regex.findall(f)
+    qp_sigmexch = qp_sigmexch_regex.findall(f)
+    qp_energy   = qp_e_regex.findall(f)
+    qp_renorm   = qp_renorm_regex.findall(f)
+  except:
+    print "couldn't pull some matels"
+
   sig  = Sigma()
+
+  sig.lda_e       = map(float, lda_e[0].split())
+  sig.vxc         = map(float, vxc[0].split())
+  sig.exx         = map(float, qp_sigmexch[0].split())
+  sig.qp_energy   = map(float, qp_energy[0].split())
+  sig.qp_renorm   = map(float, qp_renorm[0].split())
 
   kvec        = sigmakpoint_regex.findall(f)
   sig.kvec = [map(float,x.split()) for x in kvec]
-  
 
   block        = sigmare_regex.findall(f)
   sig.sigmare  = [x for x in block[0].split('\n')]
@@ -105,10 +127,34 @@ def pull_eps(f):
 
   return epsw
 
+def gen_spec(sig_objs):
+  f = open('autospec.dat', 'w')
+  nws = len(sig_objs[0].aspec)
+  nqs = len(sig_objs) 
+  aspec = np.zeros([nws, nqs])
+  for i, sig in enumerate(sig_objs):
+    for iw in range(nws):
+      resig = map(float, sig.sigmare[iw].split())
+      imsig = map(float, sig.sigmaim[iw].split())
+      w_ev = resig[0]
+      for ibnd in range(1, 19):
+        res = (w_ev - sig.lda_e[ibnd] - (resig[ibnd] + sig.exx[ibnd] - sig.vxc[ibnd])+1.5)
+        ims = imsig[ibnd] 
+        #ims = 0.2
+        aspec[iw][i] = aspec[iw][i] + (1.0/np.pi)*(abs(ims)/(np.square(res) + np.square(ims)))
+        #aspec[iw][i] = aspec[iw][i] + (1.0/np.pi)*(abs(ims)/(np.square(res) + np.square(ims)))
+
+  for iq in range(len(sig_objs)):
+    for iw in range(nws):
+      print >>f, iq, (sig.aspec[iw].split())[0], aspec[iw][iq]
+    print >>f, ''
+  f.close()
+
+
 def fourier_interp(sig_objs):
   nws = len(sig_objs[0].aspec)
   nqs = len(sig_objs) 
-  pads = 3.0*nqs
+  pads = 8*nqs
   aspec = np.zeros([nws, nqs+pads])
   aux = np.zeros(nqs)
 
@@ -121,13 +167,14 @@ def fourier_interp(sig_objs):
 #  now have fourier coefficients interpolate back on to dense grid
     aux[:] = dct(aux[:], 2, norm='ortho')
 #dct type 3 is the 
-    auxd[:] = np.pad(aux, pads)
-    auxd[:] = dct(auxd[:], 3, norm='ortho')
+    auxd = np.pad(aux, (0, pads), 'constant')
+    auxd = dct(auxd[:], 3, norm='ortho')
     for iq in range(len(auxd)):
       aspec[iw][iq] = auxd[iq]
   for iq in range(nqs+pads):
     for iw in range(nws):
-      print >>f, iq,  aspec[iw][iq]  
+      print >>f, iq, (sig.aspec[iw].split())[0], aspec[iw][iq]
+    print >>f, ''
   f.close()
 
 def plot_spec(sig_objs):
@@ -161,7 +208,7 @@ if __name__=='__main__':
   sig_objs.sort(key=lambda x: np.linalg.norm(x.kvec))
   print sig_objs
 
-  sig_objs[0].plot_sig()
   plot_spec(sig_objs)
   fourier_interp(sig_objs)
+  gen_spec(sig_objs)
 
