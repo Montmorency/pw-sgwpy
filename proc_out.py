@@ -138,11 +138,10 @@ def gen_spec(sig_objs):
       imsig = map(float, sig.sigmaim[iw].split())
       w_ev = resig[0]
       for ibnd in range(1, 19):
-        res = (w_ev - sig.lda_e[ibnd] - (resig[ibnd] + sig.exx[ibnd] - sig.vxc[ibnd])+1.5)
+        res = (w_ev - sig.lda_e[ibnd] - (resig[ibnd] + sig.exx[ibnd] - sig.vxc[ibnd]))
         ims = imsig[ibnd] 
         #ims = 0.2
         aspec[iw][i] = aspec[iw][i] + (1.0/np.pi)*(abs(ims)/(np.square(res) + np.square(ims)))
-        #aspec[iw][i] = aspec[iw][i] + (1.0/np.pi)*(abs(ims)/(np.square(res) + np.square(ims)))
 
   for iq in range(len(sig_objs)):
     for iw in range(nws):
