@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import gen_files as gen
 import scipy
-from scipy.fftpack import dct
+#from scipy.fftpack import dct
 
 #Container for dielectric functions \epsilon(\q,\omega):
 class Eps(object):
@@ -104,28 +104,42 @@ def pull_sig(f):
   return sig
 
 def pull_eps(f):
-#get all the frequencies, epsre, and qvecs out of the output file.
-  freq_re    = re.compile(r'Imag. Frequencies:\s\n(.*?)nwgreen:',re.S)
-  qpoints_re = re.compile(r'(?<=Calculation of q =)(.*?)\n')
+# Get all the frequencies, epsre, and 
+# qvecs out of the output file.
+# return a list of of eps objects.
+  freq_re    = re.compile(r'Imag. Frequencies:\s\n(.*?)eta',re.S)
+  qpoints_re = re.compile(r'Calculation of q =    (.*?)\n')
   eps_re     = re.compile(r'(?<=inveps_{GG}\(q,w\) =)(.*?)\n')
-  freqs     = freq_re.findall(f)[0].split('\n')
-  qpoints   = qpoints_re.findall(f)
-  eps       = eps_re.findall(f)
+  ecut_re       = re.compile(r'(?<=Ecut, Ngmsco:\n)(.*?)\n',re.S)
+
+  freqs         = freq_re.findall(f)[0].split('\n')
+  qpoints       = qpoints_re.findall(f)
+  eps           = eps_re.findall(f)
+  ecut          = ecut_re.findall(f) 
+  energy, ngcut = ecut[0].split()
+  print energy, ngcut
+  ngcut = int(ngcut)
+
   try:
-    freqs     = [map(float, (x.split())) for x in freqs[:-1]]
+#    freqs     = [map(float, (x.split())) for x in freqs[:-1]]
     qpoints   = [map(float, (x.split())) for x in qpoints]
     eps       = [map(float, (x.split())) for x in eps]
   except:
     print 'oh crap'
     pass
+#the last entry in the qpoints list refers to Calculation of q
+#for sigma_matel so we just pop that out of the stack:
+  del(qpoints[-1])
+  list_eps = []
 
-  epsw = Eps()
-  epsw.w    = [(w[1], w[2]) for w in freqs]
-  epsw.eps  = eps
-  epsw.qvec = qpoints[0]
-  epsw.nws  = len(epsw.w)
-
-  return epsw
+  for q in range(len(qpoints)):
+    epsw = Eps()
+    epsw.w    = [(w[1], w[2]) for w in freqs]
+    epsw.nws  = len(epsw.w)
+    epsw.eps  = eps[q*ngcut:q*ngcut+ngcut]
+    epsw.qvec = qpoints[q]
+    list_eps.append(epsw)
+  return list_eps
 
 def gen_spec(sig_objs):
   f = open('autospec.dat', 'w')
@@ -140,7 +154,8 @@ def gen_spec(sig_objs):
       for ibnd in range(1, 19):
         res = (w_ev - sig.lda_e[ibnd] - (resig[ibnd] + sig.exx[ibnd] - sig.vxc[ibnd]))
         ims = imsig[ibnd] 
-        #ims = 0.2
+       #if just broadening the LDA spec fxn.
+       #ims = 0.2
         aspec[iw][i] = aspec[iw][i] + (1.0/np.pi)*(abs(ims)/(np.square(res) + np.square(ims)))
 
   for iq in range(len(sig_objs)):
@@ -164,10 +179,11 @@ def fourier_interp(sig_objs):
 #trace over valence manifold:
       aux[i] = sum(tmp[2:17])
 #  now have fourier coefficients interpolate back on to dense grid
-    aux[:] = dct(aux[:], 2, norm='ortho')
+#dct not present on magneto!
+#    aux[:] = dct(aux[:], 2, norm='ortho')
 #dct type 3 is the 
     auxd = np.pad(aux, (0, pads), 'constant')
-    auxd = dct(auxd[:], 3, norm='ortho')
+ #   auxd = dct(auxd[:], 3, norm='ortho')
     for iq in range(len(auxd)):
       aspec[iw][iq] = auxd[iq]
   for iq in range(nqs+pads):
