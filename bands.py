@@ -62,8 +62,7 @@ class BandStruct(object):
 
 #  f is a string with the contents of the file
 #  re.S match new lines as white space. re.M multiline...
-    kpoint_regex = re.compile(r'\s+k =[\s-]([0-9\.]+)[\s-]([0-9\.]+)[\s-]([0-9\.]+)\s+band energies \(ev\):\n(.*?)\n\n', re.S)
-
+    kpoint_regex = re.compile(r'\s+k =[\s-]([0-9\.]+)[\s-]([0-9\.]+)[\s-]([0-9\.]+).*?bands \(ev\):\n(.*?)\n\n', re.S)
     for a,b,c,es in kpoint_regex.findall(f):
       a = float(a)
       b = float(b)
