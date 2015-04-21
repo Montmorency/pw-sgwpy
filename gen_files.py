@@ -42,14 +42,17 @@ def parse_args(args):
         extra.append(arg)
   return (extra, vars)
 
-def freq_grid(wstart, wstop, dw):
+def freq_grid(wstart, wstop, dw, str='re', delta='0.1'):
   wfs = []
-#first freq needs to be 0.0 0.0
-  wfs.append('0.0d0 0.0d0')
-  b = 0.4
-  print (wstop-(wstart+dw))/dw 
-  for a in np.arange(wstart, wstop,dw):
-    wfs.append('{0}  {1}'.format(a,b))
+  #For MULTISHIFT First Freq needs to be 0.0d0 0.0d0.
+  #print (wstop-(wstart+dw))/dw 
+  b = 0.0
+  if str=='re':
+    for a in np.arange(wstart, wstop,dw):
+      wfs.append('{0}  {1}'.format(a,delta))
+  elif str=='im':
+    for a in np.arange(wstart, wstop,dw):
+      wfs.append('0.0d0  {0:.5f}'.format(a))
   return(wfs)
 
 def k_path():
