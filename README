@@ -1,3 +1,7 @@
 Methods for parsing/plotting Quantum Espresso/SGW output files.
-job/input files are formatted in /templates using python format 
-syntax i.e. {var} enclosed in curley brackets are read in and replaced.
+Briefly the module contains functions for pulling band structure
+data from Quantum Espresso output files, self-energy data,
+and dielectric data from SGW output files.
+
+There are also routines for easily generating and varying
+input files for Quantum Espresso and SGW calculations.
