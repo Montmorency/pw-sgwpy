@@ -1,16 +1,18 @@
 import sys
 import re
 import numpy as np
+from   gen_files import parse_args, split_vars
+
 #f is a string with the contents of the file
 class FermiSurface(object):
   def __init__(self):
-    self.nx = 16
-    self.ny = 16
-    self.nz = 16
+    self.nx = 26
+    self.ny = 26
+    self.nz = 1
     self.dimvec = np.array([float(self.nx), float(self.ny), float(self.nz)])
     self.fermixyz = {}
     self.muk = {}
-    self.prefix = 'mgb2'
+    self.prefix = 'blcac6'
     self.nbndmin = 1
     self.nbndmax = 4
 
@@ -20,20 +22,24 @@ class FermiSurface(object):
 #should have the in pwstruct module, and also read the crystal,
 #and reciprocal space coordinates direct from the pw output.
   def cryst_to_cart(self, kvec):
-#pb crystal axes
+#Pb crystal axes
     at1 = np.array([-0.500000,   0.000000,  0.500000])
     at2 = np.array([ 0.000000,   0.500000,  0.500000])
     at3 = np.array([-0.500000,   0.500000,  0.000000])
-#mgb2 crystal axes
-    at1 = np.array([ 1.000000,   0.000000,   0.000000])                          
-    at2 = np.array([-0.500000,   0.866025,   0.000000])                           
-    at3 = np.array([ 0.000000,   0.000000,   1.142069])                             
+#MgB2 crystal axes
+    at1 = np.array([ 1.000000,   0.000000,   0.000000])
+    at2 = np.array([-0.500000,   0.866025,   0.000000])
+    at3 = np.array([ 0.000000,   0.000000,   1.142069])
+#CaC6 crystal axes
+    at1 = np.array([ 1.000000,   0.000000,   0.000000])
+    at2 = np.array([-0.500000,   0.866025,   0.000000])
+    at3 = np.array([ 0.000000,   0.000000,   3.535284])  
+
     at  = np.array([at1, at2, at3])
     outvec = np.dot(at, kvec)
     return outvec
 
   def pull_fermi(self,f):
-    #fermi_regex  = re.compile(r'k\s=\s([0-9\.\-]+)\s([0-9\.\-]+)\s([0-9\.\-]+).*?:\n\n\s+([0-9\.\-\s]+)')
     fermi_regex  = re.compile(r'k\s=\s?(\-?[0-9\.]+)\s?(\-?[0-9\.]+)\s?(\-?[0-9\.]+).*?:\n\n\s+([0-9\.\-\s]+)')
     print len(fermi_regex.findall(f))
     for a, b, c, d in fermi_regex.findall(f):
@@ -48,12 +54,10 @@ class FermiSurface(object):
         if (a<0.0): kvec[i] = kvec[i] + 1.0
       index = [round(a) for a in np.multiply(kvec, self.dimvec)]
       for i, a in enumerate(index):
-        if index[i] == 16.0: 
+        if index[i] == 26.0: 
           index[i] = 0.0
-    
+      print index
       self.fermixyz[tuple(index)] = d
-#    for a in sorted(self.fermixyz.keys()):
-#      print a 
 
 #returns dictionary keys:xyz coordinates, values:eigenvalues.
   def print_xsf(self, surf, title='colour', band1=2, band2=5):
@@ -63,26 +67,31 @@ class FermiSurface(object):
       print >>f1, "BEGIN_BLOCK_DATAGRID_3D" 
       print >>f1, "{0}_band_{1}".format(self.prefix, ibnd)     
       print >>f1, " BEGIN_DATAGRID_3D_{0}".format(self.prefix) 
-      print >>f1, " {0}  {1}  {2} ".format(self.nx, self.ny, self.nz)
-      #CaC6:
+      print >>f1, " {0}  {1}  {2} ".format(self.nx, self.ny, self.nz+1)
       print >>f1, "0.000000  0.000000  0.000000"   
+    #Pb
      # print >>f1, "-1.000000 -1.000000  1.000000"
      # print >>f1, " 1.000000  1.000000  1.000000"
      # print >>f1, "-1.000000  1.000000 -1.000000"
      # print >>f1, ""
     #MgB2:
+      #print >>f1, "1.000000  0.577350  0.000000"
+      #print >>f1, "0.000000  1.154701  0.000000"
+      #print >>f1, "0.000000  0.000000  0.875604"
+    #CaC6:
       print >>f1, "1.000000  0.577350  0.000000"
       print >>f1, "0.000000  1.154701  0.000000"
-      print >>f1, "0.000000  0.000000  0.875604"
+      print >>f1, "0.000000  0.000000  0.282863"
       print >>f1, ""
-    #Pb
-      for z in range(self.nz):
+
+      for z in range(self.nz+1):
         for y in range(self.ny):
           for x in range(self.nx):
             try:
               print>>f1, surf[x,y,z][ibnd], " ",
             except TypeError:
               print>>f1, surf[x,y,z], " ",
+              print 'Missing key' 
               #print>>f1, 1.0, " ",
             except KeyError:
               print 'Missing key' 
@@ -128,9 +137,19 @@ class FermiSurface(object):
       print >> f1, ""
 
 if __name__=="__main__":
-  f = open(sys.argv[1]).read()
+  extra, vars = parse_args(sys.argv[1:])
+  vars_values = []
+
+  vars = split_vars(vars)
+  print vars, extra
+
+  f = open(extra[0]).read()
   fs = FermiSurface()
-#  fs.pull_fermi(f)
-#  fs.print_xsf(fs.fermixyz)
-  fs.pull_muk(f)
-  fs.print_xsf(fs.muk, 'muk')
+
+  if 'fs' in vars.keys():
+    fs.pull_fermi(f)
+    fs.print_xsf(fs.fermixyz, band1=27, band2=33)
+
+  if 'muk' in vars.keys():
+    fs.pull_muk(f)
+    fs.print_xsf(fs.muk, 'muk')

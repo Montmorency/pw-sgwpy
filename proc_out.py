@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import gen_files as gen
 import scipy
 #from scipy.fftpack import dct
-
 #Container for dielectric functions \epsilon(\q,\omega):
 class Eps(object):
   def __init__(self):

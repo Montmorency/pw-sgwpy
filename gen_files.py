@@ -42,6 +42,21 @@ def parse_args(args):
         extra.append(arg)
   return (extra, vars)
 
+def split_vars(vars):
+  vars_values = []
+  for var_name, values in vars:
+    values = values.split(",")
+    try:
+      if any(['.' in value for value in values]):
+        values = map(float, values)
+      else:
+        values = map(int, values)
+    except ValueError:
+      pass
+    vars_values.append((var_name, values))
+  vars_dict = dict(vars_values)
+  return vars_dict
+
 def freq_grid(wstart, wstop, dw, str='re', delta='0.1'):
   wfs = []
   #For MULTISHIFT First Freq needs to be 0.0d0 0.0d0.
