@@ -63,8 +63,18 @@ class BandStruct(object):
 #  f is a string with the contents of the file
 #  re.S match new lines as white space. re.M multiline...
     kpoint_regex = re.compile(r'\s+k =[\s-]([0-9\.]+)[\s-]([0-9\.]+)[\s-]([0-9\.]+).*?bands \(ev\):\n(.*?)\n\n', re.S)
-    fermi_regex =  re.compile(r'Fermi energy is\s+([0-9\.]+) ev')
-    self.fermilevel = float(fermi_regex.findall(f)[0])
+    fermi_regex =  re.compile(r'Fermi energy is\s+([\-0-9\.]+) ev')
+    homo_regex =  re.compile(r'highest occupied, lowest unoccupied level \(ev\):\s+([-][0-9\.]+)')
+    try :
+      self.fermilevel = float(fermi_regex.findall(f)[0])
+    except:
+      print 'System not a metal?'
+
+    try :
+      self.fermilevel = float(homo_regex.findall(f)[0])
+    except:
+      print 'System not a metal?'
+
     for a,b,c,es in kpoint_regex.findall(f):
       a = float(a)
       b = float(b)
