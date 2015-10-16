@@ -22,10 +22,16 @@ def brute_force(ox_sites, num_ox):
 			'not a valid config.'
 	return valid_config
 
+def compress_list(valid_configs):
+#magnitude order the Oxygen atoms
+  valid_configs= [row.sort(key lambda x:(x[0],x[1])) for row in valid_configs]
+#eliminate redundant configurations
+  unique  = np.unique([tuple(row) for row in valid_configs])
+  pass
+
 # for picked oxygen atom prune the graphene flake
 # recursively call the algorithm and place 
 # the oxygen in a valid spot
-
 def recursive_decorate(config, ox_sites, num_ox):
 	configs=[]
 	ox_sites_prune=[]
