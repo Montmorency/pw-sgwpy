@@ -27,6 +27,7 @@ from pprint import pprint
 
 class GraphOx(object):
     def __init__(self, configs=[]):
+    #def __init__(self):
         self.configs = []
 
     def backtrack_recurse(self, ox_sites, config, num_ox):
@@ -77,6 +78,14 @@ def expand_sites_mut(sites):
         while len(site[-1]) > 1:
             site.extend(site.pop())
         site.extend(site.pop())
+
+def total_dist(config):
+    distance = 0.0
+    for a, b in itertools.combinations(list(config),2):
+       a = np.array(a)
+       b = np.array(b)
+       distance += np.sqrt((a-b).dot(a-b))
+    return distance
 
 def backtrack(ox_sites, num_ox):
     k = 0
@@ -276,8 +285,21 @@ configs =[]
 #results = backtrack_recurse(valid_configs[0], configs, num_ox )
 configs = []
 flake = GraphOx()
+flake2 = GraphOx()
 for config in valid_configs:
     flake.backtrack_recurse(config, configs, num_ox )
+    flake2.backtrack_recurse(config, configs, num_ox )
+
+dist_dict = {}
+for config in flake2.configs:
+    a = total_dist(config)
+    a = round(a)
+    dist_dict.setdefault(a, [])
+    dist_dict[a].append(config)
+g = open('./structs/dist_histogram_ox{0}.dat'.format(num_ox), 'w')
+for key, value in dist_dict.items():
+    print >> g, key, len(value)
+g.close()
 
 print ''
 print '\t There are {0} valid configurations'.format(len(flake.configs))
@@ -287,7 +309,7 @@ print ''
 print '\t There are {0} unique configurations'.format(len(flake.configs))
 print ''
 
-for i, config in enumerate(flake.configs):
+for i, config in enumerate(list(flake.configs)[1:60]):
     f = open('./structs/c{0}.xyz'.format(str(i)), 'w')
     print >> f, 2*n*m+num_ox
     print >> f, ''
