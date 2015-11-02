@@ -5,27 +5,15 @@ import argparse
 from scipy.misc import comb
 from pprint import pprint
 
-# This function should return a list of lists
-# For the simplest case we only consider first option at
-# each level of the tree and two oxygen atoms.
-# We should find the function returns
-# a list nested as such: 
-# [site1, [valid_sites]]
-# The next step would be three oxygen 
-# atoms (again only considering first site at 
-# each level of the tree)
-# at this level we should find a nested list:
-#   O1,     O2,       O3
-# [site1, [site2, [valid_sites]] ]
-# Now let's consider the case where we loop 
-# over all the possible configurations at each level
-# How would the list look then?
-# For two oxygen's would look like this?
-# [[site1, [valid_sites]], [site2, [valid_sites]] ]
-# Now for the case of three oxygen atoms?
-# [[site1, [site11, [valid_sites]]], [site1, [site2,[valid_sites]]], ...]
 
-class GraphOx(object):
+
+# Say a list of the following type has been generated:
+# [[site1, [site11, [valid_sites]], [site1, [site2,[valid_sites]]]], [site2,[...]]]
+# This object takes the list and recursively builds up a flattened
+# list. Upon building that list the object has a method to build a set out
+# of that list.
+
+class NestedList(object):
     def __init__(self, configs=[]):
         self.configs = []
 
