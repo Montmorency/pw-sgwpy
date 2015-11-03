@@ -135,6 +135,10 @@ def recursive_decorate_stack(ox_sites, num_ox):
   	    for ox_site in ox_sites:
   	    	if (dist(config, ox_site) == False): 
   	        	pass
+#  	    	elif (dist(config, ox_site)  < rcut): 
+#              pass
+#          elif ox_site == unique():
+#              pass
   		else:
   			ox_sites_prune.append(ox_site)
             configs.append([config, recursive_decorate_stack(ox_sites_prune, num_ox-1)])
@@ -291,14 +295,17 @@ for config in valid_configs:
     flake2.backtrack_recurse(config, configs, num_ox )
 
 dist_dict = {}
+flake2.prune_configs()
 for config in flake2.configs:
     a = total_dist(config)
-    a = round(a)
+#    a = round(a)
     dist_dict.setdefault(a, [])
     dist_dict[a].append(config)
+
 g = open('./structs/dist_histogram_ox{0}.dat'.format(num_ox), 'w')
 for key, value in dist_dict.items():
     print >> g, key, len(value)
+    print >> g, key, [x for x in value]
 g.close()
 
 print ''
@@ -309,7 +316,8 @@ print ''
 print '\t There are {0} unique configurations'.format(len(flake.configs))
 print ''
 
-for i, config in enumerate(list(flake.configs)[1:60]):
+#for i, config in enumerate(list(flake.configs)[1:60]):
+for i, config in enumerate(list(flake.configs)):
     f = open('./structs/c{0}.xyz'.format(str(i)), 'w')
     print >> f, 2*n*m+num_ox
     print >> f, ''
